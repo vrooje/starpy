@@ -6,9 +6,10 @@
 import numpy as N
 import scipy as S
 import pylab as P
-import pyfits as F
+#import pyfits as F
+import astropy.io.fits as F
 from scipy.io.idl import readsav
-import pyfits as F
+#import pyfits as F
 import emcee
 import triangle
 import time
