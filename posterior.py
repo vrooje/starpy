@@ -35,6 +35,7 @@ if method == 'yes' or method =='y':
     prov = raw_input('Do you wish to use the provided u-r and NUV-u look up tables? (yes/no) :')
     if prov == 'yes' or prov =='y':
         print 'gridding...'
+
         tq = N.linspace(0.003, 13.8, 100)
         tau = N.linspace(0.003, 4, 100)
         ages = N.linspace(10.88861228, 13.67023409, 50)
@@ -137,6 +138,72 @@ else:
     sys.exit("You didn't give a valid answer (yes/no). Try running again.")
     
 n=0
+
+
+
+# had to move this to above predict_c_one() and get_colours()
+
+""" Load the magnitude bandpass filters using idl save """
+filters = readsav('ugriz.sav')
+fuvwave= filters.ugriz.fuvwave[0]
+fuvtrans = filters.ugriz.fuvtrans[0]
+nuvwave= filters.ugriz.nuvwave[0]
+nuvtrans = filters.ugriz.nuvtrans[0]
+uwave= filters.ugriz.uwave[0]
+utrans = filters.ugriz.utrans[0]
+gwave= filters.ugriz.gwave[0]
+gtrans = filters.ugriz.gtrans[0]
+rwave= filters.ugriz.rwave[0]
+rtrans = filters.ugriz.rtrans[0]
+iwave= filters.ugriz.iwave[0]
+itrans = filters.ugriz.itrans[0]
+zwave= filters.ugriz.zwave[0]
+ztrans = filters.ugriz.ztrans[0]
+vwave= filters.ugriz.vwave[0]
+vtrans = filters.ugriz.vtrans[0]
+jwave= filters.ugriz.jwave[0]
+jtrans = filters.ugriz.jtrans[0]
+hwave= filters.ugriz.hwave[0]
+htrans = filters.ugriz.htrans[0]
+kwave= filters.ugriz.kwave[0]
+ktrans = filters.ugriz.ktrans[0]
+
+""" and the HST bandpass filters using numpy save """
+""" filter transmission curves are from the SVO filter service,
+    e.g. http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?id=HST/WFC3_IR.F160W 
+    
+    Roughly speaking, the bandpasses 
+    (F435W, F606W, F775W, F814W, F850LP, F105W, F125W, F140W, F160W)
+    correspond to
+    (B, V, i, I, z, Y, J, JH, H)
+    but these aren't exact copies of those filters already read in
+    and e.g. it's easy to confuse i and I anyway
+    so to be explicit, don't abbreviate to single-letter filters
+"""
+hst_filters = N.load('HST_filters.npy').flat[0]
+f435wave  = hst_filters['HST_ACS_WFC.F435W_77']['wave']
+f435trans = hst_filters['HST_ACS_WFC.F435W_77']['throughput']
+f606wave  = hst_filters['HST_ACS_WFC.F606W_77']['wave']
+f606trans = hst_filters['HST_ACS_WFC.F606W_77']['throughput']
+f775wave  = hst_filters['HST_ACS_WFC.F775W_77']['wave']
+f775trans = hst_filters['HST_ACS_WFC.F775W_77']['throughput']
+f814wave  = hst_filters['HST_ACS_WFC.F814W_77']['wave']
+f814trans = hst_filters['HST_ACS_WFC.F814W_77']['throughput']
+f850wave  = hst_filters['HST_ACS_WFC.F850LP_77']['wave']
+f850trans = hst_filters['HST_ACS_WFC.F850LP_77']['throughput']
+f105wave  = hst_filters['HST_WFC3_IR.F105W']['wave']
+f105trans = hst_filters['HST_WFC3_IR.F105W']['throughput']
+f125wave  = hst_filters['HST_WFC3_IR.F125W']['wave']
+f125trans = hst_filters['HST_WFC3_IR.F125W']['throughput']
+f140wave  = hst_filters['HST_WFC3_IR.F140W']['wave']
+f140trans = hst_filters['HST_WFC3_IR.F140W']['throughput']
+f160wave  = hst_filters['HST_WFC3_IR.F160W']['wave']
+f160trans = hst_filters['HST_WFC3_IR.F160W']['throughput']
+
+
+
+
+
 
 def expsfh(tq, tau, time):
     """ This function when given a single combination of [tq, tau] values will calcualte the SFR at all times. First calculate the sSFR at all times as defined by Peng et al. (2010) - then the SFR at the specified time of quenching, tq and set the SFR at this value  at all times before tq. Beyond this time the SFR is an exponentially declining function with timescale tau. 
@@ -545,62 +612,5 @@ def corner_plot(s, labels, extents, bf, id):
     P.subplots_adjust(hspace=0.0)
     return fig
 
-
-""" Load the magnitude bandpass filters using idl save """
-filters = readsav('ugriz.sav')
-fuvwave= filters.ugriz.fuvwave[0]
-fuvtrans = filters.ugriz.fuvtrans[0]
-nuvwave= filters.ugriz.nuvwave[0]
-nuvtrans = filters.ugriz.nuvtrans[0]
-uwave= filters.ugriz.uwave[0]
-utrans = filters.ugriz.utrans[0]
-gwave= filters.ugriz.gwave[0]
-gtrans = filters.ugriz.gtrans[0]
-rwave= filters.ugriz.rwave[0]
-rtrans = filters.ugriz.rtrans[0]
-iwave= filters.ugriz.iwave[0]
-itrans = filters.ugriz.itrans[0]
-zwave= filters.ugriz.zwave[0]
-ztrans = filters.ugriz.ztrans[0]
-vwave= filters.ugriz.vwave[0]
-vtrans = filters.ugriz.vtrans[0]
-jwave= filters.ugriz.jwave[0]
-jtrans = filters.ugriz.jtrans[0]
-hwave= filters.ugriz.hwave[0]
-htrans = filters.ugriz.htrans[0]
-kwave= filters.ugriz.kwave[0]
-ktrans = filters.ugriz.ktrans[0]
-
-""" and the HST bandpass filters using numpy save """
-""" filter transmission curves are from the SVO filter service,
-    e.g. http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?id=HST/WFC3_IR.F160W 
-    
-    Roughly speaking, the bandpasses 
-    (F435W, F606W, F775W, F814W, F850LP, F105W, F125W, F140W, F160W)
-    correspond to
-    (B, V, i, I, z, Y, J, JH, H)
-    but these aren't exact copies of those filters already read in
-    and e.g. it's easy to confuse i and I anyway
-    so to be explicit, don't abbreviate to single-letter filters
-"""
-hst_filters = N.load('HST_filters.npy')
-f435wave  = hst_filters['HST_ACS_WFC.F435W_77']['wave']
-f435trans = hst_filters['HST_ACS_WFC.F435W_77']['throughput']
-f606wave  = hst_filters['HST_ACS_WFC.F606W_77']['wave']
-f606trans = hst_filters['HST_ACS_WFC.F606W_77']['throughput']
-f775wave  = hst_filters['HST_ACS_WFC.F775W_77']['wave']
-f775trans = hst_filters['HST_ACS_WFC.F775W_77']['throughput']
-f814wave  = hst_filters['HST_ACS_WFC.F814W_77']['wave']
-f814trans = hst_filters['HST_ACS_WFC.F814W_77']['throughput']
-f850wave  = hst_filters['HST_ACS_WFC.F850LP_77']['wave']
-f850trans = hst_filters['HST_ACS_WFC.F850LP_77']['throughput']
-f105wave  = hst_filters['HST_WFC3_IR.F105W']['wave']
-f105trans = hst_filters['HST_WFC3_IR.F105W']['throughput']
-f125wave  = hst_filters['HST_WFC3_IR.F125W']['wave']
-f125trans = hst_filters['HST_WFC3_IR.F125W']['throughput']
-f140wave  = hst_filters['HST_WFC3_IR.F140W']['wave']
-f140trans = hst_filters['HST_WFC3_IR.F140W']['throughput']
-f160wave  = hst_filters['HST_WFC3_IR.F160W']['wave']
-f160trans = hst_filters['HST_WFC3_IR.F160W']['throughput']
 
 

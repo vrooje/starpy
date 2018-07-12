@@ -5,13 +5,22 @@ import numpy as N
 """ Function to generate a look up table of u-r and NUV-u colours using the predict_c_one function in StarfPy. Defaults are for a 50 x 100 x 100 look up table in age, tau and t. 
     """
 # defaults
-tq = N.linspace(0.003, 13.8, 100)
+# tq = N.linspace(0.003, 13.8, 100)
 tau = N.linspace(0.003, 4, 100)
 # age = N.linspace(10.88861228, 13.67023409, 50)  #this is approx. 0.25 > z > 0
 
-# higher-redshift (times) for HST images - approx 4 > z > 0.2
+# don't have quenching time go all the way to z=0 when we aren't going to go z < 0.2
+tq = N.linspace(0.003, 11.5, 100)
+# higher-redshift (times) for HST images - approx 4 > z > 0.2 
 # in equal dt as the above. which means a LOT more bins
 age = N.linspace(1.571, 11.258, 175)
+
+"""
+# temporary, just testing things out
+tq = N.linspace(0.003, 11.0, 10)
+tau = N.linspace(0.003, 4, 10)
+age = N.linspace(1.571, 11.258, 10)
+"""
 
 print 'making product list of inputs...'
 grid = N.array(list(product(age, tau, tq)))
@@ -47,6 +56,8 @@ for n in range(len(grid)):
     N.save(savenames['f435-f606'], nuv)
     N.save(savenames['f606-f775'], ur)
 
+print("Done %s\n" % colstr)
+    
 
 ur = N.zeros(len(grid))
 nuv = N.zeros(len(grid))
@@ -55,9 +66,11 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f775wave, f775trans], u=[f850wave, f850trans], r=[f105wave, f105trans])
-    N.save(savename['f775-f850'], nuv)
-    N.save(savename['f850-f105'], ur)
+    N.save(savenames['f775-f850'], nuv)
+    N.save(savenames['f850-f105'], ur)
 
+print("Done %s\n" % colstr)
+    
 
 ur = N.zeros(len(grid))
 nuv = N.zeros(len(grid))
@@ -66,9 +79,11 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f850wave, f850trans], u=[f125wave, f125trans], r=[f160wave, f160trans])
-    N.save(savename['f850-f125'], nuv)
-    N.save(savename['f125-f160'], ur)
+    N.save(savenames['f850-f125'], nuv)
+    N.save(savenames['f125-f160'], ur)
 
+print("Done %s\n" % colstr)
+    
 
 ur = N.zeros(len(grid))
 nuv = N.zeros(len(grid))
@@ -77,9 +92,11 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f606wave, f606trans], u=[f814wave, f814trans], r=[f125wave, f125trans])
-    N.save(savename['f606-f814'], nuv)
-    N.save(savename['f814-f125'], ur)
+    N.save(savenames['f606-f814'], nuv)
+    N.save(savenames['f814-f125'], ur)
 
+print("Done %s\n" % colstr)
+    
 
 
 ur = N.zeros(len(grid))
@@ -89,7 +106,9 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f814wave, f814trans], u=[f105wave, f105trans], r=[f125wave, f125trans])
-    N.save(savename['f814-f105'], nuv)
-    N.save(savename['f105-f125'], ur)
+    N.save(savenames['f814-f105'], nuv)
+    N.save(savenames['f105-f125'], ur)
 
+print("Done %s\n" % colstr)
+    
 
