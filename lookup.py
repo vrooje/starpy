@@ -44,6 +44,18 @@ savenames = {'f435-f606': 'f435mf606_look_up.npy',
 
 'calculating colours...'
 
+'''
+  writing to the savefile takes ~50-100 ms each time for a file ~10 MB size, so as the iterations
+  increase, the time spent writing increases considerably as well.
+  For a grid of 50 x 50 x 175 and writing time of 0.1 ms, writing each iteration adds up to 48 hours
+  of CPU time. So let's not write *every* iteration, but instead just every so often. That way if
+  we crash we won't have that much to re-do and can pick up again at close to where we left off.
+  Note: adding an if statement to check if we're at the right n value costs slightly extra, but the
+  time saved more than makes up for it.
+'''
+# scaled integer values between 1 and 500
+i_savefile = max(min(int(len(grid)/3500), 500), 1)
+
 
 colstr =  'F435-F606, F606-F775'
 for n in range(len(grid)):
@@ -53,9 +65,13 @@ for n in range(len(grid)):
     # N.save(savename1, nuv)
     # N.save(savename2, ur)
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f435wave, f435trans], u=[f606wave, f606trans], r=[f775wave, f775trans])
-    N.save(savenames['f435-f606'], nuv)
-    N.save(savenames['f606-f775'], ur)
+    if n % i_savefile == 0:
+        N.save(savenames['f435-f606'], nuv)
+        N.save(savenames['f606-f775'], ur)
 
+# write the final array (needed if we're not writing to the savefile with each iteration)
+N.save(savenames['f435-f606'], nuv)
+N.save(savenames['f606-f775'], ur)
 print("Done %s\n" % colstr)
     
 
@@ -66,9 +82,12 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f775wave, f775trans], u=[f850wave, f850trans], r=[f105wave, f105trans])
-    N.save(savenames['f775-f850'], nuv)
-    N.save(savenames['f850-f105'], ur)
+    if n % i_savefile == 0:
+        N.save(savenames['f775-f850'], nuv)
+        N.save(savenames['f850-f105'], ur)
 
+N.save(savenames['f775-f850'], nuv)
+N.save(savenames['f850-f105'], ur)
 print("Done %s\n" % colstr)
     
 
@@ -79,9 +98,12 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f850wave, f850trans], u=[f125wave, f125trans], r=[f160wave, f160trans])
-    N.save(savenames['f850-f125'], nuv)
-    N.save(savenames['f125-f160'], ur)
+    if n % i_savefile == 0:
+        N.save(savenames['f850-f125'], nuv)
+        N.save(savenames['f125-f160'], ur)
 
+N.save(savenames['f850-f125'], nuv)
+N.save(savenames['f125-f160'], ur)
 print("Done %s\n" % colstr)
     
 
@@ -92,9 +114,12 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f606wave, f606trans], u=[f814wave, f814trans], r=[f125wave, f125trans])
-    N.save(savenames['f606-f814'], nuv)
-    N.save(savenames['f814-f125'], ur)
+    if n % i_savefile == 0:
+        N.save(savenames['f606-f814'], nuv)
+        N.save(savenames['f814-f125'], ur)
 
+N.save(savenames['f606-f814'], nuv)
+N.save(savenames['f814-f125'], ur)
 print("Done %s\n" % colstr)
     
 
@@ -106,9 +131,12 @@ for n in range(len(grid)):
     if n%10000 == 0:
         print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
     nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f814wave, f814trans], u=[f105wave, f105trans], r=[f125wave, f125trans])
-    N.save(savenames['f814-f105'], nuv)
-    N.save(savenames['f105-f125'], ur)
+    if n % i_savefile == 0:
+        N.save(savenames['f814-f105'], nuv)
+        N.save(savenames['f105-f125'], ur)
 
+N.save(savenames['f814-f105'], nuv)
+N.save(savenames['f105-f125'], ur)
 print("Done %s\n" % colstr)
     
 
