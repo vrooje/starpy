@@ -86,6 +86,7 @@ for n in range(len(grid)):
         N.save(savenames['f775-f850'], nuv)
         N.save(savenames['f850-f105'], ur)
 
+# write the final array (needed if we're not writing to the savefile with each iteration)
 N.save(savenames['f775-f850'], nuv)
 N.save(savenames['f850-f105'], ur)
 print("Done %s\n" % colstr)
@@ -102,6 +103,7 @@ for n in range(len(grid)):
         N.save(savenames['f850-f125'], nuv)
         N.save(savenames['f125-f160'], ur)
 
+# write the final array (needed if we're not writing to the savefile with each iteration)
 N.save(savenames['f850-f125'], nuv)
 N.save(savenames['f125-f160'], ur)
 print("Done %s\n" % colstr)
@@ -118,6 +120,7 @@ for n in range(len(grid)):
         N.save(savenames['f606-f814'], nuv)
         N.save(savenames['f814-f125'], ur)
 
+# write the final array (needed if we're not writing to the savefile with each iteration)
 N.save(savenames['f606-f814'], nuv)
 N.save(savenames['f814-f125'], ur)
 print("Done %s\n" % colstr)
@@ -135,6 +138,7 @@ for n in range(len(grid)):
         N.save(savenames['f814-f105'], nuv)
         N.save(savenames['f105-f125'], ur)
 
+# write the final array (needed if we're not writing to the savefile with each iteration)
 N.save(savenames['f814-f105'], nuv)
 N.save(savenames['f105-f125'], ur)
 print("Done %s\n" % colstr)
