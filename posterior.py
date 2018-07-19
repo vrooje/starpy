@@ -6,11 +6,13 @@
 import numpy as N
 import scipy as S
 import pylab as P
-import pyfits as F
+#import pyfits as F
+import astropy.io.fits as F
 from scipy.io.idl import readsav
-import pyfits as F
+#import pyfits as F
 import emcee
-import triangle
+#import triangle  # the new version is below
+import corner
 import time
 import os
 import matplotlib.image as mpimg
@@ -34,6 +36,7 @@ if method == 'yes' or method =='y':
     prov = raw_input('Do you wish to use the provided u-r and NUV-u look up tables? (yes/no) :')
     if prov == 'yes' or prov =='y':
         print 'gridding...'
+
         tq = N.linspace(0.003, 13.8, 100)
         tau = N.linspace(0.003, 4, 100)
         ages = N.linspace(10.88861228, 13.67023409, 50)
@@ -137,6 +140,94 @@ else:
     
 n=0
 
+
+
+# had to move this to above predict_c_one() and get_colours()
+
+""" Load the magnitude bandpass filters using idl save """
+filters = readsav('ugriz.sav')
+fuvwave= filters.ugriz.fuvwave[0]
+fuvtrans = filters.ugriz.fuvtrans[0]
+nuvwave= filters.ugriz.nuvwave[0]
+nuvtrans = filters.ugriz.nuvtrans[0]
+uwave= filters.ugriz.uwave[0]
+utrans = filters.ugriz.utrans[0]
+gwave= filters.ugriz.gwave[0]
+gtrans = filters.ugriz.gtrans[0]
+rwave= filters.ugriz.rwave[0]
+rtrans = filters.ugriz.rtrans[0]
+iwave= filters.ugriz.iwave[0]
+itrans = filters.ugriz.itrans[0]
+zwave= filters.ugriz.zwave[0]
+ztrans = filters.ugriz.ztrans[0]
+vwave= filters.ugriz.vwave[0]
+vtrans = filters.ugriz.vtrans[0]
+jwave= filters.ugriz.jwave[0]
+jtrans = filters.ugriz.jtrans[0]
+hwave= filters.ugriz.hwave[0]
+htrans = filters.ugriz.htrans[0]
+kwave= filters.ugriz.kwave[0]
+ktrans = filters.ugriz.ktrans[0]
+
+""" and the HST bandpass filters using numpy save """
+""" filter transmission curves are from the SVO filter service,
+    e.g. http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php?id=HST/WFC3_IR.F160W 
+    
+    Roughly speaking, the bandpasses 
+    (F435W, F606W, F775W, F814W, F850LP, F105W, F125W, F140W, F160W)
+    correspond to
+    (B, V, i, I, z, Y, J, JH, H)
+    but these aren't exact copies of those filters already read in
+    and e.g. it's easy to confuse i and I anyway
+    so to be explicit, don't abbreviate to single-letter filters
+"""
+hst_filters = N.load('HST_filters.npy').flat[0]
+f435wave  = hst_filters['HST_ACS_WFC.F435W_77']['wave']
+f435trans = hst_filters['HST_ACS_WFC.F435W_77']['throughput']
+f606wave  = hst_filters['HST_ACS_WFC.F606W_77']['wave']
+f606trans = hst_filters['HST_ACS_WFC.F606W_77']['throughput']
+f775wave  = hst_filters['HST_ACS_WFC.F775W_77']['wave']
+f775trans = hst_filters['HST_ACS_WFC.F775W_77']['throughput']
+f814wave  = hst_filters['HST_ACS_WFC.F814W_77']['wave']
+f814trans = hst_filters['HST_ACS_WFC.F814W_77']['throughput']
+f850wave  = hst_filters['HST_ACS_WFC.F850LP_77']['wave']
+f850trans = hst_filters['HST_ACS_WFC.F850LP_77']['throughput']
+f105wave  = hst_filters['HST_WFC3_IR.F105W']['wave']
+f105trans = hst_filters['HST_WFC3_IR.F105W']['throughput']
+f125wave  = hst_filters['HST_WFC3_IR.F125W']['wave']
+f125trans = hst_filters['HST_WFC3_IR.F125W']['throughput']
+f140wave  = hst_filters['HST_WFC3_IR.F140W']['wave']
+f140trans = hst_filters['HST_WFC3_IR.F140W']['throughput']
+f160wave  = hst_filters['HST_WFC3_IR.F160W']['wave']
+f160trans = hst_filters['HST_WFC3_IR.F160W']['throughput']
+
+
+# these are just temporary, don't really use them for science
+hst_filters_z08 = N.load('HST_filters_z0.8.npy').flat[0]
+f435wave_z08  = hst_filters_z08['HST_ACS_WFC.F435W_77']['wave']
+f435trans_z08 = hst_filters_z08['HST_ACS_WFC.F435W_77']['throughput']
+f606wave_z08  = hst_filters_z08['HST_ACS_WFC.F606W_77']['wave']
+f606trans_z08 = hst_filters_z08['HST_ACS_WFC.F606W_77']['throughput']
+f775wave_z08  = hst_filters_z08['HST_ACS_WFC.F775W_77']['wave']
+f775trans_z08 = hst_filters_z08['HST_ACS_WFC.F775W_77']['throughput']
+f814wave_z08  = hst_filters_z08['HST_ACS_WFC.F814W_77']['wave']
+f814trans_z08 = hst_filters_z08['HST_ACS_WFC.F814W_77']['throughput']
+f850wave_z08  = hst_filters_z08['HST_ACS_WFC.F850LP_77']['wave']
+f850trans_z08 = hst_filters_z08['HST_ACS_WFC.F850LP_77']['throughput']
+f105wave_z08  = hst_filters_z08['HST_WFC3_IR.F105W']['wave']
+f105trans_z08 = hst_filters_z08['HST_WFC3_IR.F105W']['throughput']
+f125wave_z08  = hst_filters_z08['HST_WFC3_IR.F125W']['wave']
+f125trans_z08 = hst_filters_z08['HST_WFC3_IR.F125W']['throughput']
+f140wave_z08  = hst_filters_z08['HST_WFC3_IR.F140W']['wave']
+f140trans_z08 = hst_filters_z08['HST_WFC3_IR.F140W']['throughput']
+f160wave_z08  = hst_filters_z08['HST_WFC3_IR.F160W']['wave']
+f160trans_z08 = hst_filters_z08['HST_WFC3_IR.F160W']['throughput']
+
+
+
+
+
+
 def expsfh(tq, tau, time):
     """ This function when given a single combination of [tq, tau] values will calcualte the SFR at all times. First calculate the sSFR at all times as defined by Peng et al. (2010) - then the SFR at the specified time of quenching, tq and set the SFR at this value  at all times before tq. Beyond this time the SFR is an exponentially declining function with timescale tau. 
         
@@ -204,7 +295,8 @@ def expsfh_mass(ur, Mr, age, tq, tau, time):
     sfr[a:] = c_sfr*N.exp(-(time[a:]-tq)/tau)
     return sfr 
 
-def predict_c_one(theta, age):
+
+def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans]):
     """ This function predicts the u-r and nuv-u colours of a galaxy with a SFH defined by [tq, tau], according to the BC03 model at a given "age" i.e. observation time. It calculates the colours at all times then interpolates for the observed age - it has to this in order to work out the cumulative mass across the SFH to determine how much each population of stars contributes to the flux at each time step. 
         
         :theta:
@@ -225,6 +317,10 @@ def predict_c_one(theta, age):
         
         :u_r_age:
         Array the same shape as :age: with the u-r colour values at each given age for the specified :theta: values
+
+
+        modified 11/7/2018 by BDS to allow user to specify different colours from nuv-u and u-r (those are still default)
+           nuv still corresponds to the shortest-wavelength filter, r to the longest
         """
     ti = N.arange(0, 0.01, 0.003)
     t = N.linspace(0,14.0,100)
@@ -234,13 +330,13 @@ def predict_c_one(theta, age):
     ### Work out total flux at each time given the sfh model of tau and tq (calls fluxes function) ###
     total_flux = fluxes.assign_total_flux(data[0,1:], data[1:,0], data[1:,1:], t*1E9, sfr)
     ### Calculate fluxes from the flux at all times then interpolate to get one colour for the age you are observing the galaxy at - if many galaxies are being observed, this also works with an array of ages to give back an array of colours ###
-    nuv_u, u_r = get_colours(t*1E9, total_flux, data)
+    nuv_u, u_r = get_colours(t*1E9, total_flux, data, nuv=nuv, u=u, r=r)
     nuv_u_age = N.interp(age, t, nuv_u)
     u_r_age = N.interp(age, t, u_r)
     return nuv_u_age, u_r_age
     
 
-def get_colours(time, flux, data):
+def get_colours(time, flux, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans]):
     """" Calculates the colours of a given sfh fluxes across time given the BC03 models from the magnitudes of the SED.
         
         :time:
@@ -255,10 +351,21 @@ def get_colours(time, flux, data):
         RETURNS:
         :nuv_u: :u_r:
         Arrays the same shape as :time: with the predicted nuv-u and u-r colours
+
+
+        modified 11/7/2018 by BDS to allow user to specify different colours from nuv-u and u-r (those are still default)
+          note: it's still important that nuv is the bluest wavelength and r is the reddest wavelength
         """
-    nuvmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, nuvwave, nuvtrans)
-    umag = fluxes.calculate_AB_mag(time, data[1:,0], flux, uwave, utrans)
-    rmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, rwave, rtrans)
+    nuvwave_local  = nuv[0]
+    nuvtrans_local = nuv[1]
+    uwave_local    = u[0]
+    utrans_local   = u[1]
+    rwave_local    = r[0]
+    rtrans_local   = r[1]
+    
+    nuvmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, nuvwave_local, nuvtrans_local)
+    umag = fluxes.calculate_AB_mag(time, data[1:,0], flux, uwave_local, utrans_local)
+    rmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, rwave_local, rtrans_local)
     nuv_u = nuvmag - umag
     u_r = umag - rmag
     return nuv_u, u_r
@@ -484,7 +591,10 @@ def corner_plot(s, labels, extents, bf, id):
     ax2 = P.subplot2grid((3,3), (1,0), colspan=2, rowspan=2)
     ax2.set_xlabel(labels[0])
     ax2.set_ylabel(labels[1])
-    triangle.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
+    # newer versions of matplotlib will give a "contours must be increasing" error,
+    # which is fixed in the next-generation version of triangle (i.e. corner)
+    #triangle.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
+    corner.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
     ax2.axvline(x=bf[0][0], linewidth=1)
     ax2.axhline(y=bf[1][0], linewidth=1)
     [l.set_rotation(45) for l in ax2.get_xticklabels()]
@@ -529,27 +639,4 @@ def corner_plot(s, labels, extents, bf, id):
     return fig
 
 
-""" Load the magnitude bandpass filters using idl save """
-filters = readsav('ugriz.sav')
-fuvwave= filters.ugriz.fuvwave[0]
-fuvtrans = filters.ugriz.fuvtrans[0]
-nuvwave= filters.ugriz.nuvwave[0]
-nuvtrans = filters.ugriz.nuvtrans[0]
-uwave= filters.ugriz.uwave[0]
-utrans = filters.ugriz.utrans[0]
-gwave= filters.ugriz.gwave[0]
-gtrans = filters.ugriz.gtrans[0]
-rwave= filters.ugriz.rwave[0]
-rtrans = filters.ugriz.rtrans[0]
-iwave= filters.ugriz.iwave[0]
-itrans = filters.ugriz.itrans[0]
-zwave= filters.ugriz.zwave[0]
-ztrans = filters.ugriz.ztrans[0]
-vwave= filters.ugriz.vwave[0]
-vtrans = filters.ugriz.vtrans[0]
-jwave= filters.ugriz.jwave[0]
-jtrans = filters.ugriz.jtrans[0]
-hwave= filters.ugriz.hwave[0]
-htrans = filters.ugriz.htrans[0]
-kwave= filters.ugriz.kwave[0]
-ktrans = filters.ugriz.ktrans[0]
+
