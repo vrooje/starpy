@@ -27,11 +27,11 @@ The sample function implements the emcee EnsembleSampler function for the galaxy
 
 *s* : Array of shape (_nsteps_ * _nwalkers_, 2) containing the positions of the walkers at all steps for all 4 parameters. 
        
-*fig* : s plotted as contours and integrated over to a each one dimensional histogram with median values and 1sigma                   values either side. The triangle.py module is necessary to produce these plots and is provided in the starfpy                 repository. It can also be downloaded here: https://github.com/dfm/triangle.py or with pip install triangle_plot              at the command line.
+*fig* : s plotted as contours and integrated over to a each one dimensional histogram with median values and 1sigma                   values either side. The triangle.py module is necessary to produce these plots and is provided in the starpy                 repository. It can also be downloaded here: https://github.com/dfm/triangle.py or with pip install triangle_plot              at the command line.
     
 **Running the code**    
 
-Data inputs occur with the starfpy.py file, all necessary functions are in the posterior.py file. The code can be run as follows:
+Data inputs occur with the starpy.py file, all necessary functions are in the posterior.py file. The code can be run as follows:
 
         python starpy.py u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec
         
