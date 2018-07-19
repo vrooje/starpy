@@ -11,7 +11,8 @@ import astropy.io.fits as F
 from scipy.io.idl import readsav
 #import pyfits as F
 import emcee
-import triangle
+#import triangle  # the new version is below
+import corner
 import time
 import os
 import matplotlib.image as mpimg
@@ -568,7 +569,10 @@ def corner_plot(s, labels, extents, bf, id):
     ax2 = P.subplot2grid((3,3), (1,0), colspan=2, rowspan=2)
     ax2.set_xlabel(labels[0])
     ax2.set_ylabel(labels[1])
-    triangle.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
+    # newer versions of matplotlib will give a "contours must be increasing" error,
+    # which is fixed in the next-generation version of triangle (i.e. corner)
+    #triangle.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
+    corner.hist2d(x, y, ax=ax2, bins=100, extent=extents, plot_contours=True)
     ax2.axvline(x=bf[0][0], linewidth=1)
     ax2.axhline(y=bf[1][0], linewidth=1)
     [l.set_rotation(45) for l in ax2.get_xticklabels()]
