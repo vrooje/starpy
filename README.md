@@ -15,7 +15,7 @@ The sample function implements the emcee EnsembleSampler function for the galaxy
         
 *err_nuv_u* : Error on the observed nuv-u colour of a galaxy. Single value. 
         
-*z* : Observed redshfit of a galaxy. Single value. 
+*z* : Observed redshift of a galaxy. Single value. 
         
 *dr8* : Sloan ID DR8 number - can be any identification number for a galaxy. 
 
