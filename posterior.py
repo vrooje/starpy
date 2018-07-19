@@ -202,6 +202,28 @@ f160wave  = hst_filters['HST_WFC3_IR.F160W']['wave']
 f160trans = hst_filters['HST_WFC3_IR.F160W']['throughput']
 
 
+# these are just temporary, don't really use them for science
+hst_filters_z08 = N.load('HST_filters_z0.8.npy').flat[0]
+f435wave_z08  = hst_filters_z08['HST_ACS_WFC.F435W_77']['wave']
+f435trans_z08 = hst_filters_z08['HST_ACS_WFC.F435W_77']['throughput']
+f606wave_z08  = hst_filters_z08['HST_ACS_WFC.F606W_77']['wave']
+f606trans_z08 = hst_filters_z08['HST_ACS_WFC.F606W_77']['throughput']
+f775wave_z08  = hst_filters_z08['HST_ACS_WFC.F775W_77']['wave']
+f775trans_z08 = hst_filters_z08['HST_ACS_WFC.F775W_77']['throughput']
+f814wave_z08  = hst_filters_z08['HST_ACS_WFC.F814W_77']['wave']
+f814trans_z08 = hst_filters_z08['HST_ACS_WFC.F814W_77']['throughput']
+f850wave_z08  = hst_filters_z08['HST_ACS_WFC.F850LP_77']['wave']
+f850trans_z08 = hst_filters_z08['HST_ACS_WFC.F850LP_77']['throughput']
+f105wave_z08  = hst_filters_z08['HST_WFC3_IR.F105W']['wave']
+f105trans_z08 = hst_filters_z08['HST_WFC3_IR.F105W']['throughput']
+f125wave_z08  = hst_filters_z08['HST_WFC3_IR.F125W']['wave']
+f125trans_z08 = hst_filters_z08['HST_WFC3_IR.F125W']['throughput']
+f140wave_z08  = hst_filters_z08['HST_WFC3_IR.F140W']['wave']
+f140trans_z08 = hst_filters_z08['HST_WFC3_IR.F140W']['throughput']
+f160wave_z08  = hst_filters_z08['HST_WFC3_IR.F160W']['wave']
+f160trans_z08 = hst_filters_z08['HST_WFC3_IR.F160W']['throughput']
+
+
 
 
 
