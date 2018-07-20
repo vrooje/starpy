@@ -296,8 +296,20 @@ def expsfh_mass(ur, Mr, age, tq, tau, time):
     return sfr 
 
 
-def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans]):
-    """ This function predicts the u-r and nuv-u colours of a galaxy with a SFH defined by [tq, tau], according to the BC03 model at a given "age" i.e. observation time. It calculates the colours at all times then interpolates for the observed age - it has to this in order to work out the cumulative mass across the SFH to determine how much each population of stars contributes to the flux at each time step. 
+
+
+
+
+''' BDS modified predict_c_one and get_colors to take more general versions of color prediction requests
+    can take any list of filter pairs and return all the colors
+    default is still to do it the old way though
+'''
+
+
+
+
+def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans], filter_pairs=None):
+    """ This function predicts the u-r and nuv-u colours of a galaxy with a SFH defined by [tq, tau], according to the BC03 model at a given "age" i.e. observation time. It calculates the colours at all times then interpolates for the observed age - it has to do this in order to work out the cumulative mass across the SFH to determine how much each population of stars contributes to the flux at each time step. 
         
         :theta:
         An array of size (1,2) containing the values [tq, tau] in Gyr.
@@ -310,17 +322,39 @@ def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwa
         
         :age:
         Observed age of a galaxy, often calculated from the redshift i.e. at z=0.1 the age ~ 12.5. Must be in units of Gyr. 
+
+        If you want colors of the format (a-b), (b-c), you can specify that as:
+        nuv=[a_wave, a_trans], u=[b_wave, b_trans], r=[c_wave, c_trans]
+
+        OR for an arbitrary set of colors, instead use:
+        filter_pairs = [[a, b], [c, d], ... , [y, z]]
+        where each of the filters a, b, c, ... has the format [a_wave, a_trans] etc. as above.
+        Note that:
+        filter_pairs = [[a, b], [b, c]]
+        will have the same result as assigning a, b, and c to nuv, u, and r. However, the nuv=, u=, r= method is a bit faster. 
+
         
         RETURNS:
-        :nuv_u_age:
-        Array the same shape as :age: with the nuv-u colour values at each given age for the specified :theta: values
+
+        if not specifying filter_pairs:
+
+           :nuv_u_age:
+           Array the same shape as :age: with the nuv-u colour values at each given age for the specified :theta: values
         
-        :u_r_age:
-        Array the same shape as :age: with the u-r colour values at each given age for the specified :theta: values
+           :u_r_age:
+           Array the same shape as :age: with the u-r colour values at each given age for the specified :theta: values
+
+        otherwise:
+
+           :colours:
+           a list of N colours (or colour arrays, if :age: is an array) where N == len(filter_pairs), ordered as filter_pairs is.
+
 
 
         modified 11/7/2018 by BDS to allow user to specify different colours from nuv-u and u-r (those are still default)
            nuv still corresponds to the shortest-wavelength filter, r to the longest
+
+        modified 20/7/2018 by BDS to allow an arbitrary list of pairs of filters
         """
     ti = N.arange(0, 0.01, 0.003)
     t = N.linspace(0,14.0,100)
@@ -330,20 +364,72 @@ def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwa
     ### Work out total flux at each time given the sfh model of tau and tq (calls fluxes function) ###
     total_flux = fluxes.assign_total_flux(data[0,1:], data[1:,0], data[1:,1:], t*1E9, sfr)
     ### Calculate fluxes from the flux at all times then interpolate to get one colour for the age you are observing the galaxy at - if many galaxies are being observed, this also works with an array of ages to give back an array of colours ###
-    nuv_u, u_r = get_colours(t*1E9, total_flux, data, nuv=nuv, u=u, r=r)
-    nuv_u_age = N.interp(age, t, nuv_u)
-    u_r_age = N.interp(age, t, u_r)
-    return nuv_u_age, u_r_age
+
+
+    if filter_pairs is None:
+        nuv_u, u_r = get_colours(t*1E9, total_flux, data, nuv=nuv, u=u, r=r)
+        nuv_u_age = N.interp(age, t, nuv_u)
+        u_r_age = N.interp(age, t, u_r)
+        return nuv_u_age, u_r_age
+    else:
+        colours = get_colours(t*1E9, total_flux, data, filter_pairs)
+        colours_age = [N.interp(age, t, thecol) for thecol in colours]
+        return colours_age
+
+        '''
+        # loop through pairs to get colors
+        colours  = []
+        
+        for thepair in filter_pairs:
+            thecolour = get_colour(t*1.0e9, total_flux, data, thepair)
+            colours.append(N.interp(age, t, thecolour))
+
+        return colours
+        '''
     
 
-def get_colours(time, flux, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans]):
+def get_colour(time, flux, data, filter_pair):
+    """" Calculates the colour of a given sfh fluxes across time given the BC03 models from the magnitudes of the SED.
+        
+        :time:
+        Array of times at which the colours should be calculated. In units of Gyrs. 
+        
+        :flux:
+        SED of fluxes describing the calculated SFH. Returned from the assign_total_flux function in fluxes.py
+        
+        :data:
+        BC03 model values for wavelengths, time steps and fluxes. The wavelengths are needed to calculate the magnitudes. 
+
+        :filter_pair:
+        the two filter transmission curves you wish to use to make colours with. 
+        format: [[ bluer_wavelengths,  bluer_transmission], 
+                 [redder_wavelengths, redder_transmission]]
+        
+        RETURNS:
+        :colour:
+        Array the same shape as :time: with the predicted colour
+
+        """
+    bluer  = filter_pair[0]
+    redder = filter_pair[1]
+    i_wave  = 0
+    i_trans = 1
+
+    bluer_mag  = fluxes.calculate_AB_mag(time, data[1:,0], flux,  bluer[i_wave],  bluer[i_trans])
+    redder_mag = fluxes.calculate_AB_mag(time, data[1:,0], flux, redder[i_wave], redder[i_trans])
+    return bluer_mag - redder_mag
+
+
+
+
+def get_colours(time, flux, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans], filter_pairs=None):
     """" Calculates the colours of a given sfh fluxes across time given the BC03 models from the magnitudes of the SED.
         
         :time:
         Array of times at which the colours should be calculated. In units of Gyrs. 
         
         :flux:
-        SED of fluxes describing the calcualted SFH. Returned from the assign_total_flux function in fluxes.py
+        SED of fluxes describing the calculated SFH. Returned from the assign_total_flux function in fluxes.py
         
         :data:
         BC03 model values for wavelengths, time steps and fluxes. The wavelengths are needed to calculate the magnitudes. 
@@ -356,19 +442,46 @@ def get_colours(time, flux, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=
         modified 11/7/2018 by BDS to allow user to specify different colours from nuv-u and u-r (those are still default)
           note: it's still important that nuv is the bluest wavelength and r is the reddest wavelength
         """
-    nuvwave_local  = nuv[0]
-    nuvtrans_local = nuv[1]
-    uwave_local    = u[0]
-    utrans_local   = u[1]
-    rwave_local    = r[0]
-    rtrans_local   = r[1]
-    
-    nuvmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, nuvwave_local, nuvtrans_local)
-    umag = fluxes.calculate_AB_mag(time, data[1:,0], flux, uwave_local, utrans_local)
-    rmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, rwave_local, rtrans_local)
-    nuv_u = nuvmag - umag
-    u_r = umag - rmag
-    return nuv_u, u_r
+
+    if filter_pairs is None:
+        nuvwave_local  = nuv[0]
+        nuvtrans_local = nuv[1]
+        uwave_local    = u[0]
+        utrans_local   = u[1]
+        rwave_local    = r[0]
+        rtrans_local   = r[1]
+        
+        nuvmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, nuvwave_local, nuvtrans_local)
+        umag = fluxes.calculate_AB_mag(time, data[1:,0], flux, uwave_local, utrans_local)
+        rmag = fluxes.calculate_AB_mag(time, data[1:,0], flux, rwave_local, rtrans_local)
+        nuv_u = nuvmag - umag
+        u_r = umag - rmag
+        return nuv_u, u_r
+    else:
+        colours  = []
+        
+        for thepair in filter_pairs:
+            bluermag  = fluxes.calculate_AB_mag(time, data[1:,0], flux, thepair[0][0], thepair[0][1])
+            reddermag = fluxes.calculate_AB_mag(time, data[1:,0], flux, thepair[1][0], thepair[1][1])
+            
+            colours.append(bluermag - reddermag)
+
+        return colours
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def lookup_col_one(theta, age):
     ur_pred = u(theta[0], theta[1])
