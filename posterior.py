@@ -224,7 +224,13 @@ f160wave_z08  = hst_filters_z08['HST_WFC3_IR.F160W']['wave']
 f160trans_z08 = hst_filters_z08['HST_WFC3_IR.F160W']['throughput']
 
 
-
+## TEMPORARY FOR HST PROPOSAL PURPOSES
+nuvwave  = f435wave_z08
+nuvtrans = f435trans_z08
+uwave    = f606wave_z08
+utrans   = f606trans_z08
+rwave    = f850wave_z08
+rtrans   = f850trans_z08
 
 
 
