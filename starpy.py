@@ -37,11 +37,11 @@ paramfile = 'posterior_params.in'
 try:
     with open(paramfile) as f:
         for line in f:
-            arg = line.rstrip('\n').lower().strip(' ').split('=')
-            print(arg)
-            print("------\n")
+            arg = line.rstrip('\n').strip(' ').split('=')
+            #print(arg)
+            #print("------\n")
 
-            if (arg[0].strip() in ['lookup', 'lookups', 'lookuptable', 'lookuptables', 'lu', 'lut']):
+            if (arg[0].lower().strip() in ['lookup', 'lookups', 'lookuptable', 'lookuptables', 'lu', 'lut']):
                 use_table = True
                 tables = arg[1].split(',')
 
@@ -53,11 +53,11 @@ try:
                         if len(tables) < 2:
                             print('Error: if not "default", 2 lookup tables needed, filenames separated by "," or " "')
                             exit(-1)
-                    col1_file  = tables[0]
-                    col2_file  = tables[1]
+                    col1_file  = tables[0].strip()
+                    col2_file  = tables[1].strip()
                     lu_default = False
 
-            elif (arg[0].strip() in ['tq', 't_q', 'tquench', 't_quench', 'quench_time', 'quenching_time']):
+            elif (arg[0].lower().strip() in ['tq', 't_q', 'tquench', 't_quench', 'quench_time', 'quenching_time']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying quenching times tq in %s, must be formatted "tq = tstart, tend, n_vals"' % paramfile)
@@ -65,7 +65,7 @@ try:
                     
                 tq = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['tau', 'exptau', 'quenchingrate', 'quenching_rate']):
+            elif (arg[0].lower().strip() in ['tau', 'exptau', 'quenchingrate', 'quenching_rate']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying quenching rates tau in %s, must be formatted "tau = taustart, tauend, n_vals"' % paramfile)
@@ -73,7 +73,7 @@ try:
                     
                 tau = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['ages', 'age', 't_obs', 'age_obs']):
+            elif (arg[0].lower().strip() in ['ages', 'age', 't_obs', 'age_obs']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying ages in %s, must be formatted "age = agestart, ageend, n_vals"' % paramfile)
@@ -81,7 +81,7 @@ try:
                     
                 ages = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['model', 'models']):
+            elif (arg[0].lower().strip() in ['model', 'models']):
                 if (arg[1].strip() in ['default']):
                     # we've already defined the default above
                     pass
@@ -104,8 +104,11 @@ try:
     ur_pred  = N.load(col2_file)
     lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
 
-except IOError:
-    print("Input file %s not found, trying inputs from STDIN..." % paramfile)
+except IOError as e:
+    print("Oops!\n\n")
+    print(e)
+    print("\n")
+    print("Input file %s not found or there was an error reading in a file within it, trying inputs from STDIN..." % paramfile)
     
     model = str(raw_input('Tell me the location of the extracted (.ised_ASCII) SPS model to use to predict the u-r and NUV-u colours, e.g. ~/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII :'))
     
