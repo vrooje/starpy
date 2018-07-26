@@ -31,37 +31,119 @@ P.rc('xtick', labelsize='medium')
 P.rc('ytick', labelsize='medium')
 P.rc('axes', labelsize='medium')
 
-method = raw_input('Do you wish to use a look-up table? (yes/no) :')
-if method == 'yes' or method =='y':
-    prov = raw_input('Do you wish to use the provided u-r and NUV-u look up tables? (yes/no) :')
-    if prov == 'yes' or prov =='y':
-        print 'gridding...'
 
-        tq = N.linspace(0.003, 13.8, 100)
-        tau = N.linspace(0.003, 4, 100)
-        ages = N.linspace(10.88861228, 13.67023409, 50)
-        grid = N.array(list(product(ages, tau, tq)))
-        print 'loading...'
-        nuv_pred = N.load('nuv_look_up_ssfr.npy')
-        ur_pred = N.load('ur_look_up_ssfr.npy')
-        lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
-    elif prov=='no' or prov=='n':
-        col1 = str(raw_input('Location of your NUV-u colour look up table :'))
-        col2 = str(raw_input('Location of your u-r colour look up table :'))
-        one = N.array(input('Define first axis values (ages) of look up table start, stop, len(axis1); e.g. 10, 13.8, 50 :'))
-        ages = N.linspace(float(one[0]), float(one[1]), float(one[2]))
-        two = N.array(input('Define second axis values (tau) of look up table start, stop, len(axis1); e.g. 0, 4, 100 : '))
-        tau = N.linspace(float(two[0]), float(two[1]), float(two[2]))
-        three = N.array(input('Define third axis values (tq) of look up table start, stop, len(axis1); e.g. 0, 13.8, 100 : '))
-        tq = N.linspace(float(three[0]), float(three[1]), float(three[2]))
-        grid = N.array(list(product(ages, tau, tq)))
-        print 'loading...'
-        nuv_pred = N.load(col1)
-        ur_pred = N.load(col2)
-        lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
-    else:
-        sys.exit("You didn't give a valid answer (yes/no). Try running again.")
+
+
+'''
+# defaults
+tq = N.linspace(0.003, 13.8, 100)
+tau = N.linspace(0.003, 4, 100)
+ages = N.linspace(10.88861228, 13.67023409, 50)
+use_table = False
+
+paramfile = 'posterior_params.in'
+try:
+    with open(paramfile) as f:
+        for line in f:
+            arg = line.rstrip('\n').lower().strip(' ').split('=')
+
+            if (arg[0] in ['lookup', 'lookups', 'lookuptable', 'lookuptables', 'lu', 'lut']):
+                use_table = True
+                tables = arg[1].split(',')
+
+                if tables[0] in ['default']:
+                    col1_file  = 'nuv_look_up_ssfr.npy'
+                    col2_file  = 'ur_look_up_ssfr.npy'
+                    lu_default = True
+                else:
+                    if len(tables) < 2:
+                        tables = arg[1].split(' ')
+                        if len(tables) < 2:
+                            print('Error: if not "default", 2 lookup tables needed, filenames separated by "," or " "')
+                            exit(-1)
+                    col1_file  = tables[0]
+                    col2_file  = tables[1]
+                    lu_default = False
+
+            elif (arg[0] in ['tq', 't_q', 'tquench', 't_quench', 'quench_time', 'quenching_time']):
+                valstr = arg[1].split(',')
+                if len(valstr) != 3:
+                    print('Error: if specifying quenching times tq in %s, must be formatted "tq = tstart, tend, n_vals"' % paramfile)
+                    exit(-1)
+                    
+                tq = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
+
+            elif (arg[0] in ['tau', 'exptau', 'quenchingrate', 'quenching_rate']):
+                valstr = arg[1].split(',')
+                if len(valstr) != 3:
+                    print('Error: if specifying quenching rates tau in %s, must be formatted "tau = taustart, tauend, n_vals"' % paramfile)
+                    exit(-1)
+                    
+                tau = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
+
+            elif (arg[0] in ['ages', 'age', 't_obs', 'age_obs']):
+                valstr = arg[1].split(',')
+                if len(valstr) != 3:
+                    print('Error: if specifying ages in %s, must be formatted "age = agestart, ageend, n_vals"' % paramfile)
+                    exit(-1)
+                    
+                ages = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
+
+            else:
+                if (line.strip(' ').startswith("#")) | (len(line.rstrip('\n').strip(' ').strip('\t')) < 1):
+                    pass
+                else:
+                    print("WARNING: unable to parse line in %s:\n   %s" % paramfile, line)
+
+        # end loop through file
+    # end with open(paramfile)
     
+    grid = N.array(list(product(ages, tau, tq)))
+    
+    nuv_pred = N.load(col1_file)
+    ur_pred  = N.load(col2_file)
+    lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
+
+except (FileNotFoundError, IOError):
+    print("Input file %s not found, trying inputs from STDIN..." % paramfile)
+    
+
+    method = raw_input('Do you wish to use a look-up table? (yes/no) :')
+    if method == 'yes' or method =='y':
+        use_table = True
+        prov = raw_input('Do you wish to use the provided u-r and NUV-u look up tables? (yes/no) :')
+        if prov == 'yes' or prov =='y':
+            print 'gridding...'
+
+            tq = N.linspace(0.003, 13.8, 100)
+            tau = N.linspace(0.003, 4, 100)
+            ages = N.linspace(10.88861228, 13.67023409, 50)
+            grid = N.array(list(product(ages, tau, tq)))
+            print 'loading...'
+            nuv_pred = N.load('nuv_look_up_ssfr.npy')
+            ur_pred = N.load('ur_look_up_ssfr.npy')
+            lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
+        elif prov=='no' or prov=='n':
+            col1 = str(raw_input('Location of your NUV-u colour look up table :'))
+            col2 = str(raw_input('Location of your u-r colour look up table :'))
+            one = N.array(input('Define first axis values (ages) of look up table start, stop, len(axis1); e.g. 10, 13.8, 50 :'))
+            ages = N.linspace(float(one[0]), float(one[1]), float(one[2]))
+            two = N.array(input('Define second axis values (tau) of look up table start, stop, len(axis1); e.g. 0, 4, 100 : '))
+            tau = N.linspace(float(two[0]), float(two[1]), float(two[2]))
+            three = N.array(input('Define third axis values (tq) of look up table start, stop, len(axis1); e.g. 0, 13.8, 100 : '))
+            tq = N.linspace(float(three[0]), float(three[1]), float(three[2]))
+            grid = N.array(list(product(ages, tau, tq)))
+            print 'loading...'
+            nuv_pred = N.load(col1)
+            ur_pred = N.load(col2)
+            lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
+        else:
+            sys.exit("You didn't give a valid answer (yes/no). Try running again.")
+
+
+
+if use_table:
+
     def lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age):
         """ Function for determining the likelihood of ONE quenching model described by theta = [tq, tau] for all the galaxies in the sample. Simple chi squared likelihood between predicted and observed colours of the galaxies. 
         
@@ -137,6 +219,50 @@ elif method == 'no' or method =='n':
 
 else:
     sys.exit("You didn't give a valid answer (yes/no). Try running again.")
+
+'''
+
+
+def lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
+    """ Function for determining the likelihood of ONE quenching model described by theta = [tq, tau] for all the galaxies in the sample. Simple chi squared likelihood between predicted and observed colours of the galaxies. 
+
+        :theta:
+        An array of size (1,2) containing the values [tq, tau] in Gyr.
+
+        :tq:
+        The time at which the onset of quenching begins in Gyr. Allowed ranges from the beginning to the end of known cosmic time.
+
+        :tau:
+        The exponential timescale decay rate of the star formation history in Gyr. Allowed range from the rest of the functions is 0 < tau [Gyr] < 5.
+
+        :ur:
+        Observed u-r colour of a galaxy; k-corrected.
+
+        :sigma_ur:
+        Error on the observed u-r colour of a galaxy
+
+        :nuvu:
+        Observed nuv-u colour of a galaxy; k-corrected.
+
+        :sigma_nuvu:
+        Error on the observed nuv-u colour of a galaxy
+
+        :age:
+        Observed age of a galaxy, often calculated from the redshift i.e. at z=0.1 the age ~ 12.5. Must be in units of Gyr.
+
+        :get_c_one:
+        Function to return one colour prediction, maybe predict_c_one if not using lookup table, and lookup_col_one if using a lookup table
+
+        RETURNS:
+        Array of same shape as :age: containing the likelihood for each galaxy at the given :theta:
+        """
+    # why is this next line here, we don't use it at all in this function?
+    tq, tau = theta
+    pred_nuvu, pred_ur = get_c_one(theta, age)
+    return -0.5*N.log(2*N.pi*sigma_ur**2)-0.5*((ur-pred_ur)**2/sigma_ur**2)-0.5*N.log10(2*N.pi*sigma_nuvu**2)-0.5*((nuvu-pred_nuvu)**2/sigma_nuvu**2)
+
+
+
     
 n=0
 
@@ -517,7 +643,7 @@ def lnprior(theta):
         return -N.inf
 
 # Overall likelihood function combining prior and model
-def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age):
+def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
     """Overall posterior function combiningin the prior and calculating the likelihood. Also prints out the progress through the code with the use of n. 
         
         :theta:
@@ -555,9 +681,9 @@ def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age):
     lp = lnprior(theta)
     if not N.isfinite(lp):
         return -N.inf
-    return lp + lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age)
+    return lp + lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one)
 
-def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec):
+def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec, get_c_one, use_table, thegrid, lu=None):
     """ Function to implement the emcee EnsembleSampler function for the sample of galaxies input. Burn in is run and calcualted fir the length specified before the sampler is reset and then run for the length of steps specified. 
         
         :ndim:
@@ -607,7 +733,10 @@ def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu
         Location at which the :samples: array was saved to. 
         
         """
-    if method == 'yes' or method=='y':
+    tq, tau, ages = thegrid
+    grid = N.array(list(product(ages, tau, tq)))
+    
+    if use_table:
         global u
         global v
         a = N.searchsorted(ages, age)
@@ -625,7 +754,7 @@ def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu
         pass
     print 'emcee running...'
     p0 = [start + 1e-4*N.random.randn(ndim) for i in range(nwalkers)]
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, threads=2, args=(ur, sigma_ur, nuvu, sigma_nuvu, age))
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, threads=2, args=(ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one))
     """ Burn in run here..."""
     pos, prob, state = sampler.run_mcmc(p0, burnin)
     lnp = sampler.flatlnprobability
