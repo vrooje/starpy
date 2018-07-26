@@ -154,15 +154,15 @@ data = N.loadtxt(model)
 model_ages = data[0,1:]
 model_lambda = data[1:,0]
 model_fluxes = data[1:,1:]
-time = N.arange(0, 0.01, 0.003)
-t = N.linspace(0,14.0,100)
-time_steps = N.append(time, t[1:])*1E9
+time_flux = N.arange(0, 0.01, 0.003)
+t_flux = N.linspace(0,14.0,100)
+time_steps_flux = N.append(time_flux, t_flux[1:])*1E9
 #First mask the ages of the very young stars hidden in birth clouds
 mask = model_ages[model_ages<4E6]
 model_fluxes[:,0:len(mask)] = 0.0
 # Calculate the fluxes at the ages specified by the time steps rather than in the models using numpy/scipy array manipulations rather than a for loop
 f = interpolate.interp2d(model_ages, model_lambda, model_fluxes)
-interp_fluxes_sim = f(time_steps, model_lambda)
+interp_fluxes_sim = f(time_steps_flux, model_lambda)
 
 
 
