@@ -40,7 +40,10 @@ savenames = {'f435-f606': 'f435mf606_look_up.npy',
              'f814-f105': 'f814mf105_look_up.npy',
              'f814-f125': 'f814mf125_look_up.npy',
              'f105-f125': 'f105mf125_look_up.npy',
-             'f125-f160': 'f125mf160_look_up.npy'}
+             'f125-f160': 'f125mf160_look_up.npy',
+             'f606-f850': 'f606mf850_look_up.npy',
+             'f435-f606 z0.8': 'f435mf606_z08_look_up.npy',
+             'f606-f850 z0.8': 'f606mf850_z08_look_up.npy'}
 
 'calculating colours...'
 
@@ -57,6 +60,24 @@ savenames = {'f435-f606': 'f435mf606_look_up.npy',
 i_savefile = max(min(int(len(grid)/3500), 500), 1)
 
 
+colstr =  'F435-F606, F606-F850 at z = 0.8'
+for n in range(len(grid)):
+    if n%10000 == 0:
+        print('%d percent complete for %s' % ((float(n)/len(grid))*100, colstr))
+    # nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0])
+    # N.save(savename1, nuv)
+    # N.save(savename2, ur)
+    nuv[n], ur[n] = predict_c_one([grid[n,2], grid[n,1]], grid[n,0], nuv=[f435wave_z08, f435trans_z08], u=[f606wave_z08, f606trans_z08], r=[f850wave_z08, f850trans_z08])
+    if n % i_savefile == 0:
+        N.save(savenames['f435-f606 z0.8'], nuv)
+        N.save(savenames['f606-f850 z0.8'], ur)
+
+# write the final array (needed if we're not writing to the savefile with each iteration)
+N.save(savenames['f435-f606 z0.8'], nuv)
+N.save(savenames['f606-f850 z0.8'], ur)
+print("Done %s\n" % colstr)
+    
+'''
 colstr =  'F435-F606, F606-F775'
 for n in range(len(grid)):
     if n%10000 == 0:
@@ -143,4 +164,6 @@ N.save(savenames['f814-f105'], nuv)
 N.save(savenames['f105-f125'], ur)
 print("Done %s\n" % colstr)
     
+'''
 
+#bye 
