@@ -7,6 +7,8 @@ import pylab as P
 """ Functions to calculate the colours at every time step in a defined SFH using a specified extracted SPS model.
     """
 
+# lines below are now read in at starpy.py and everything is explicitly passed to the functions below
+'''
 model = str(raw_input('Tell me again the location of the extracted (.ised_ASCII) SPS model to use to predict the u-r and NUV-u colours, e.g. ~/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII :'))
 data = N.loadtxt(model)
 model_ages = data[0,1:]
@@ -21,6 +23,7 @@ model_fluxes[:,0:len(mask)] = 0.0
 # Calculate the fluxes at the ages specified by the time steps rather than in the models using numpy/scipy array manipulations rather than a for loop
 f = interpolate.interp2d(model_ages, model_lambda, model_fluxes)
 interp_fluxes_sim = f(time_steps, model_lambda)
+'''
 
 def assign_total_flux(model_ages, model_lambda, model_fluxes, time_steps, sim_SFR):
 ## Produce the array to keep track of the ages of the fractional SFR at each time step
