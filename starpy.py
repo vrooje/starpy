@@ -37,11 +37,11 @@ paramfile = 'posterior_params.in'
 try:
     with open(paramfile) as f:
         for line in f:
-            arg = line.rstrip('\n').lower().strip(' ').split('=')
-            print(arg)
-            print("------\n")
+            arg = line.rstrip('\n').strip(' ').split('=')
+            #print(arg)
+            #print("------\n")
 
-            if (arg[0].strip() in ['lookup', 'lookups', 'lookuptable', 'lookuptables', 'lu', 'lut']):
+            if (arg[0].lower().strip() in ['lookup', 'lookups', 'lookuptable', 'lookuptables', 'lu', 'lut']):
                 use_table = True
                 tables = arg[1].split(',')
 
@@ -53,11 +53,11 @@ try:
                         if len(tables) < 2:
                             print('Error: if not "default", 2 lookup tables needed, filenames separated by "," or " "')
                             exit(-1)
-                    col1_file  = tables[0]
-                    col2_file  = tables[1]
+                    col1_file  = tables[0].strip()
+                    col2_file  = tables[1].strip()
                     lu_default = False
 
-            elif (arg[0].strip() in ['tq', 't_q', 'tquench', 't_quench', 'quench_time', 'quenching_time']):
+            elif (arg[0].lower().strip() in ['tq', 't_q', 'tquench', 't_quench', 'quench_time', 'quenching_time']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying quenching times tq in %s, must be formatted "tq = tstart, tend, n_vals"' % paramfile)
@@ -65,7 +65,7 @@ try:
                     
                 tq = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['tau', 'exptau', 'quenchingrate', 'quenching_rate']):
+            elif (arg[0].lower().strip() in ['tau', 'exptau', 'quenchingrate', 'quenching_rate']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying quenching rates tau in %s, must be formatted "tau = taustart, tauend, n_vals"' % paramfile)
@@ -73,7 +73,7 @@ try:
                     
                 tau = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['ages', 'age', 't_obs', 'age_obs']):
+            elif (arg[0].lower().strip() in ['ages', 'age', 't_obs', 'age_obs']):
                 valstr = arg[1].split(',')
                 if len(valstr) != 3:
                     print('Error: if specifying ages in %s, must be formatted "age = agestart, ageend, n_vals"' % paramfile)
@@ -81,7 +81,7 @@ try:
                     
                 ages = N.linspace(float(valstr[0]), float(valstr[1]), int(valstr[2]))
 
-            elif (arg[0].strip() in ['model', 'models']):
+            elif (arg[0].lower().strip() in ['model', 'models']):
                 if (arg[1].strip() in ['default']):
                     # we've already defined the default above
                     pass
@@ -104,8 +104,11 @@ try:
     ur_pred  = N.load(col2_file)
     lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
 
-except IOError:
-    print("Input file %s not found, trying inputs from STDIN..." % paramfile)
+except IOError as e:
+    print("Oops!\n\n")
+    print(e)
+    print("\n")
+    print("Input file %s not found or there was an error reading in a file within it, trying inputs from STDIN..." % paramfile)
     
     model = str(raw_input('Tell me the location of the extracted (.ised_ASCII) SPS model to use to predict the u-r and NUV-u colours, e.g. ~/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII :'))
     
@@ -125,8 +128,8 @@ except IOError:
             ur_pred = N.load('ur_look_up_ssfr.npy')
             lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
         elif prov=='no' or prov=='n':
-            col1 = str(raw_input('Location of your NUV-u colour look up table :'))
-            col2 = str(raw_input('Location of your u-r colour look up table :'))
+            col1_file = str(raw_input('Location of your NUV-u colour look up table :'))
+            col2_file = str(raw_input('Location of your u-r colour look up table :'))
             one = N.array(input('Define first axis values (ages) of look up table start, stop, len(axis1); e.g. 10, 13.8, 50 :'))
             ages = N.linspace(float(one[0]), float(one[1]), float(one[2]))
             two = N.array(input('Define second axis values (tau) of look up table start, stop, len(axis1); e.g. 0, 4, 100 : '))
@@ -135,15 +138,29 @@ except IOError:
             tq = N.linspace(float(three[0]), float(three[1]), float(three[2]))
             grid = N.array(list(product(ages, tau, tq)))
             print 'loading...'
-            nuv_pred = N.load(col1)
-            ur_pred = N.load(col2)
+            nuv_pred = N.load(col1_file)
+            ur_pred = N.load(col2_file)
             lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
         else:
             sys.exit("You didn't give a valid answer (yes/no). Try running again.")
 
 
 
-            
+print("Parameters and models used:")
+print("Model file: %s" % model)
+if use_table:
+    print("Lookup files used: \n   bluer colour: %s\n   redder colour: %s" % (col1_file, col2_file))
+else:
+    print("Not using lookup table, predicting colours from model directly (this is VERY SLOW).")
+    print(".... seriously, if you are running this a lot you should make a lookup table first!")
+
+print("Grid used:\n")
+print("   quenching time tq  varies from %.4f to %.4f Gyr, in %d steps" % (min(tq), max(tq), len(tq)))
+print("   quenching rate tau varies from %.4f to %.4f,     in %d steps" % (min(tau), max(tau), len(tau)))
+print("   pop ages covered   varies from %.4f to %.4f Gyr, in %d steps" % (min(ages), max(ages), len(ages)))
+
+print("Input colors are:\n   bluer = %s +/- %s\b   redder = %s +/- %s" % (nuv_u, err_nuv_u, u_r, err_u_r))
+print("for source %s at redshift z = %s (%s, %s)" % (dr8, z, ra, dec))
 
 # this bit was previously in fluxes.py
 
@@ -151,15 +168,15 @@ data = N.loadtxt(model)
 model_ages = data[0,1:]
 model_lambda = data[1:,0]
 model_fluxes = data[1:,1:]
-time = N.arange(0, 0.01, 0.003)
-t = N.linspace(0,14.0,100)
-time_steps = N.append(time, t[1:])*1E9
+time_flux = N.arange(0, 0.01, 0.003)
+t_flux = N.linspace(0,14.0,100)
+time_steps_flux = N.append(time_flux, t_flux[1:])*1E9
 #First mask the ages of the very young stars hidden in birth clouds
 mask = model_ages[model_ages<4E6]
 model_fluxes[:,0:len(mask)] = 0.0
 # Calculate the fluxes at the ages specified by the time steps rather than in the models using numpy/scipy array manipulations rather than a for loop
 f = interpolate.interp2d(model_ages, model_lambda, model_fluxes)
-interp_fluxes_sim = f(time_steps, model_lambda)
+interp_fluxes_sim = f(time_steps_flux, model_lambda)
 
 
 
