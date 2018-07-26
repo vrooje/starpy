@@ -128,8 +128,8 @@ except IOError as e:
             ur_pred = N.load('ur_look_up_ssfr.npy')
             lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
         elif prov=='no' or prov=='n':
-            col1 = str(raw_input('Location of your NUV-u colour look up table :'))
-            col2 = str(raw_input('Location of your u-r colour look up table :'))
+            col1_file = str(raw_input('Location of your NUV-u colour look up table :'))
+            col2_file = str(raw_input('Location of your u-r colour look up table :'))
             one = N.array(input('Define first axis values (ages) of look up table start, stop, len(axis1); e.g. 10, 13.8, 50 :'))
             ages = N.linspace(float(one[0]), float(one[1]), float(one[2]))
             two = N.array(input('Define second axis values (tau) of look up table start, stop, len(axis1); e.g. 0, 4, 100 : '))
@@ -138,15 +138,29 @@ except IOError as e:
             tq = N.linspace(float(three[0]), float(three[1]), float(three[2]))
             grid = N.array(list(product(ages, tau, tq)))
             print 'loading...'
-            nuv_pred = N.load(col1)
-            ur_pred = N.load(col2)
+            nuv_pred = N.load(col1_file)
+            ur_pred = N.load(col2_file)
             lu = N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
         else:
             sys.exit("You didn't give a valid answer (yes/no). Try running again.")
 
 
 
-            
+print("Parameters and models used:")
+print("Model file: %s" % model)
+if use_table:
+    print("Lookup files used: \n   bluer colour: %s\n   redder colour: %s" % (col1_file, col2_file))
+else:
+    print("Not using lookup table, predicting colours from model directly (this is VERY SLOW).")
+    print(".... seriously, if you are running this a lot you should make a lookup table first!")
+
+print("Grid used:\n")
+print("   quenching time tq  varies from %.4f to %.4f Gyr, in %d steps" % (min(tq), max(tq), len(tq)))
+print("   quenching rate tau varies from %.4f to %.4f,     in %d steps" % (min(tau), max(tau), len(tau)))
+print("   pop ages covered   varies from %.4f to %.4f Gyr, in %d steps" % (min(ages), max(ages), len(ages)))
+
+print("Input colors are:\n   bluer = %s +/- %s\b   redder = %s +/- %s" % (nuv_u, err_nuv_u, u_r, err_u_r))
+print("for source %s at redshift z = %s (%s, %s)" % (dr8, z, ra, dec))
 
 # this bit was previously in fluxes.py
 
