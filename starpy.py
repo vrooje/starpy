@@ -11,11 +11,35 @@ from itertools import product
 
 
 # Use sys to assign arguments for the galaxy data from the command line
-u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec = sys.argv[1:]
+try:
+    # this is the default, running starpy once on one source
+    u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec = sys.argv[1:]
+    rows = [[u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec]]
+    many_sources = False
+except:
+    # if the above doesn't work assume the first input points to a file with a list of colors for many sources
+    # the inputs should have the same structure as the above, with spaces between parameters
+    objlist_file = sys.argv[1]
+    many_sources = True
+    #lists = [[] for i in range(8)]
+    #u_r, err_u_r, nuv_u, err_nuv_u, z,  dr8,  ra,  dec = lists
+    rows = []
 
+    with open(objlist_file) as fobj:
+        for i_l, line in enumerate(fobj):
+            arg = line.rstrip('\n').strip(' ').split(' ')
+            if not(len(arg) == 8):
+                print("Something wrong at line %d in file %s, got %d values instead of 8" % (i_l, objlist_file, len(arg)))
+                exit(-1)
+
+            rows.append(arg)
+
+    print(" Read %d objects from file %s." % (len(rows), objlist_file))
+
+    
 # Use astropy to calculate the age from the redshift in the data 
 cosmo = FlatLambdaCDM(H0 = 71.0, Om0 = 0.26)
-age = N.array(cosmo.age(float(z)))
+#age = N.array(cosmo.age(float(z)))
 
 '''
 
@@ -32,6 +56,9 @@ col1_file  = 'nuv_look_up_ssfr.npy'
 col2_file  = 'ur_look_up_ssfr.npy'
 model      = 'models/Padova1994/chabrier/ASCII/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII'
 use_table  = False
+
+plotdir = "./"
+savedir = "./"
 
 paramfile = 'posterior_params.in'
 try:
@@ -87,7 +114,25 @@ try:
                     pass
                 else:
                     model = arg[1].strip()
-                
+
+            elif (arg[0].lower().strip() in ['save', 'savedir', 'save_dir']):
+                if (arg[1].strip() in ['default']):
+                    # we've already defined the default above
+                    pass
+                else:
+                    savedir = arg[1].strip()
+                    if not savedir.endswith("/"):
+                        savedir += "/"
+
+            elif (arg[0].lower().strip() in ['plot', 'plotdir', 'plot_dir']):
+                if (arg[1].strip() in ['default']):
+                    # we've already defined the default above
+                    pass
+                else:
+                    plotdir = arg[1].strip()
+                    if not plotdir.endswith("/"):
+                        plotdir += "/"
+
 
             else:
                 if (line.strip(' ').startswith("#")) | (len(line.rstrip('\n').strip(' ').strip('\t')) < 1):
@@ -154,14 +199,17 @@ else:
     print("Not using lookup table, predicting colours from model directly (this is VERY SLOW).")
     print(".... seriously, if you are running this a lot you should make a lookup table first!")
 
+print("Saving plots to %s" % plotdir)
+print("Saving .npy files to %s" % savedir)
+    
 print("Grid used:\n")
 print("   quenching time tq  varies from %.4f to %.4f Gyr, in %d steps" % (min(tq), max(tq), len(tq)))
 print("   quenching rate tau varies from %.4f to %.4f,     in %d steps" % (min(tau), max(tau), len(tau)))
 print("   pop ages covered   varies from %.4f to %.4f Gyr, in %d steps" % (min(ages), max(ages), len(ages)))
 
-print("Input colors are:\n   bluer = %s +/- %s\b   redder = %s +/- %s" % (nuv_u, err_nuv_u, u_r, err_u_r))
-print("for source %s at redshift z = %s (%s, %s)" % (dr8, z, ra, dec))
-
+if many_sources:
+    print("Beginning computations for %s sources..." % len(rows))
+    
 # this bit was previously in fluxes.py
 
 data = N.loadtxt(model)
@@ -188,7 +236,7 @@ interp_fluxes_sim = f(time_steps_flux, model_lambda)
 
 # Define parameters needed for emcee 
 nwalkers = 100 # number of monte carlo chains
-nsteps= 400 # number of steps in the monte carlo chain
+nsteps= 800 # number of steps in the monte carlo chain
 start = [7.5, 1.5] # starting place of all the chains
 burnin = 400 # number of steps in the burn in phase of the monte carlo chain
 
@@ -199,9 +247,34 @@ if use_table:
 else:
     the_c_function = predict_c_one
     lookup = None
+
+
+for i_row in range(len(rows)):
+    u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec = rows[i_row]
+
+    if many_sources:
+        print("======= Beginning run %d =======")
+
+    age = N.array(cosmo.age(float(z)))
+
+    print("Input colors are:\n   bluer = %s +/- %s\b   redder = %s +/- %s" % (nuv_u, err_nuv_u, u_r, err_u_r))
+    print("for source %s at redshift z = %s, i.e. age = %.2f Gyr,\n   and (RA, Dec) = (%s, %s)" % (dr8, z, age, ra, dec))
+
+    it_worked = False
     
-samples, samples_save = sample(2, nwalkers, nsteps, burnin, start, float(u_r), float(err_u_r), float(nuv_u), float(err_nuv_u), age, dr8, ra, dec, the_c_function, use_table, (tq, tau, ages), lu=lookup)
-tq_mcmc, tau_mcmc,  = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*N.percentile(samples, [16,50,84],axis=0)))
-print 'Best fit [t, tau] values found by starpy for input parameters are : [', tq_mcmc[0], tau_mcmc[0], ']'
-fig = corner_plot(samples, labels = [r'$ t_{quench}$', r'$ \tau$'], extents=[[N.min(samples[:,0]), N.max(samples[:,0])],[N.min(samples[:,1]),N.max(samples[:,1])]], bf=[tq_mcmc, tau_mcmc], id=dr8)
-fig.savefig('starpy_output_'+str(dr8)+'_'+str(ra)+'_'+str(dec)+'.pdf')
+    try:
+        samples, samples_save = sample(2, nwalkers, nsteps, burnin, start, float(u_r), float(err_u_r), float(nuv_u), float(err_nuv_u), age, dr8, ra, dec, the_c_function, use_table, (tq, tau, ages), lu=lookup, savedir=savedir)
+        it_worked = True
+        
+    except Exception as e:
+        print("******************* WHOOPS -- SOMETHING WENT WRONG FOR ID %s *******************")
+        print(e)
+        print("\n                    We shall skip this one.... onwards!\n")
+        print("********************************************************************************\n\n")
+        
+        
+    if it_worked:
+        tq_mcmc, tau_mcmc,  = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*N.percentile(samples, [16,50,84],axis=0)))
+        print 'Best fit [t, tau] values found by starpy for input parameters are : [', tq_mcmc[0], tau_mcmc[0], ']'
+        fig = corner_plot(samples, labels = [r'$ t_{quench}$', r'$ \tau$'], extents=[[N.min(samples[:,0]), N.max(samples[:,0])],[N.min(samples[:,1]),N.max(samples[:,1])]], bf=[tq_mcmc, tau_mcmc], id=dr8)
+        fig.savefig(plotdir+'starpy_output_'+str(dr8)+'_'+str(ra)+'_'+str(dec)+'.pdf')

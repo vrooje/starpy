@@ -683,7 +683,7 @@ def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
         return -N.inf
     return lp + lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one)
 
-def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec, get_c_one, use_table, thegrid, lu=None):
+def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec, get_c_one, use_table, thegrid, lu=None, savedir="./"):
     """ Function to implement the emcee EnsembleSampler function for the sample of galaxies input. Burn in is run and calcualted fir the length specified before the sampler is reset and then run for the length of steps specified. 
         
         :ndim:
@@ -758,18 +758,18 @@ def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu
     """ Burn in run here..."""
     pos, prob, state = sampler.run_mcmc(p0, burnin)
     lnp = sampler.flatlnprobability
-    N.save('lnprob_burnin_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy', lnp)
+    N.save(savedir+'lnprob_burnin_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy', lnp)
     samples = sampler.chain[:,:,:].reshape((-1,ndim))
-    samples_save = 'samples_burn_in_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy'
+    samples_save = savedir+'samples_burn_in_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy'
     N.save(samples_save, samples)
     sampler.reset()
     print 'Burn in complete...'
     """ Main sampler run here..."""
     sampler.run_mcmc(pos, nsteps)
     lnpr = sampler.flatlnprobability
-    N.save('lnprob_run_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy', lnpr)
+    N.save(savedir+'lnprob_run_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy', lnpr)
     samples = sampler.chain[:,:,:].reshape((-1,ndim))
-    samples_save = 'samples_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy'
+    samples_save = savedir+'samples_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy'
     N.save(samples_save, samples)
     print 'Main emcee run completed.'
     return samples, samples_save
