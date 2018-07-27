@@ -221,7 +221,7 @@ print("   quenching rate tau varies from %.4f to %.4f,     in %d steps" % (min(t
 print("   pop ages covered   varies from %.4f to %.4f Gyr, in %d steps" % (min(ages), max(ages), len(ages)))
 
 if many_sources:
-    print("Beginning computations for %s sources..." % len(rows))
+    print("\nBeginning computations for %s sources..." % len(rows))
     
 # this bit was previously in fluxes.py
 
@@ -266,7 +266,7 @@ for i_row in range(len(rows)):
     u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec = rows[i_row]
 
     if many_sources:
-        print("======= Beginning run %d =======")
+        print("======= Beginning run %d =======" % i_row)
 
     age = N.array(cosmo.age(float(z)))
 
