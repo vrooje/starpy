@@ -210,7 +210,7 @@ else:
 print("Saving plots to %s" % plotdir)
 print("Saving .npy files to %s" % savedir)
 if write_params:
-    print("Saving running list of median and 68, 95 percent confidence regions to %s" % paramfile)
+    print("Saving running list of median and 68, 95 percent confidence regions to %s" % outparamfile)
 else:
     print("Writing t, tau best fit (medians) to screen, NOT to a file.")
     
