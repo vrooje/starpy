@@ -56,7 +56,7 @@ col1_file  = 'nuv_look_up_ssfr.npy'
 col2_file  = 'ur_look_up_ssfr.npy'
 model      = 'models/Padova1994/chabrier/ASCII/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII'
 use_table  = False
-paramfile  = ''
+outparamfile  = ''
 write_params = False
 
 plotdir = "./"
@@ -136,9 +136,9 @@ try:
                         plotdir += "/"
 
             elif (arg[0].lower().strip() in ['params_out', 'paramfile', 'paramfile_out']):
-                paramfile = arg[1].strip()
+                outparamfile = arg[1].strip()
                 write_params = True
-                fparams = open(paramfile, "w")
+                fparams = open(outparamfile, "w")
 
 
             else:
@@ -209,6 +209,11 @@ else:
 
 print("Saving plots to %s" % plotdir)
 print("Saving .npy files to %s" % savedir)
+if write_params:
+    print("Saving running list of median and 68, 95 percent confidence regions to %s" % paramfile)
+else:
+    print("Writing t, tau best fit (medians) to screen, NOT to a file.")
+    
     
 print("Grid used:\n")
 print("   quenching time tq  varies from %.4f to %.4f Gyr, in %d steps" % (min(tq), max(tq), len(tq)))
