@@ -27,7 +27,7 @@ except:
 
     with open(objlist_file) as fobj:
         for i_l, line in enumerate(fobj):
-            arg = line.rstrip('\n').strip(' ').split(' ')
+            arg = line.strip('\n').strip(' ').split(' ')
             if not(len(arg) == 8):
                 print("Something wrong at line %d in file %s, got %d values instead of 8" % (i_l, objlist_file, len(arg)))
                 exit(-1)
@@ -56,6 +56,8 @@ col1_file  = 'nuv_look_up_ssfr.npy'
 col2_file  = 'ur_look_up_ssfr.npy'
 model      = 'models/Padova1994/chabrier/ASCII/extracted_bc2003_lr_m62_chab_ssp.ised_ASCII'
 use_table  = False
+outparamfile  = ''
+write_params = False
 
 plotdir = "./"
 savedir = "./"
@@ -133,12 +135,20 @@ try:
                     if not plotdir.endswith("/"):
                         plotdir += "/"
 
+            elif (arg[0].lower().strip() in ['params_out', 'paramfile', 'paramfile_out']):
+                outparamfile = arg[1].strip()
+                write_params = True
+                fparams = open(outparamfile, "w")
+                fparams.write("# id tq_median tau_median dtq_hi_68pct dtau_hi_68pct dtq_lo_68pct dtau_lo_68pct dtq_hi_95pct dtau_hi_95pct dtq_lo_95pct dtau_lo_95pct\n")
+
+
 
             else:
                 if (line.strip(' ').startswith("#")) | (len(line.rstrip('\n').strip(' ').strip('\t')) < 1):
                     pass
                 else:
-                    print("WARNING: unable to parse line in %s:\n   %s" % (paramfile, line))
+                    print("WARNING: unable to parse line in %s:\n%s" % (paramfile, line))
+                    #print(arg)
 
         # end loop through file
     # end with open(paramfile)
@@ -201,6 +211,11 @@ else:
 
 print("Saving plots to %s" % plotdir)
 print("Saving .npy files to %s" % savedir)
+if write_params:
+    print("Saving running list of median and 68, 95 percent confidence regions to %s" % outparamfile)
+else:
+    print("Writing t, tau best fit (medians) to screen, NOT to a file.")
+    
     
 print("Grid used:\n")
 print("   quenching time tq  varies from %.4f to %.4f Gyr, in %d steps" % (min(tq), max(tq), len(tq)))
@@ -208,7 +223,7 @@ print("   quenching rate tau varies from %.4f to %.4f,     in %d steps" % (min(t
 print("   pop ages covered   varies from %.4f to %.4f Gyr, in %d steps" % (min(ages), max(ages), len(ages)))
 
 if many_sources:
-    print("Beginning computations for %s sources..." % len(rows))
+    print("\nBeginning computations for %s sources..." % len(rows))
     
 # this bit was previously in fluxes.py
 
@@ -253,7 +268,7 @@ for i_row in range(len(rows)):
     u_r, err_u_r, nuv_u, err_nuv_u, z, dr8, ra, dec = rows[i_row]
 
     if many_sources:
-        print("======= Beginning run %d =======")
+        print("======= Beginning run %d =======" % i_row)
 
     age = N.array(cosmo.age(float(z)))
 
@@ -274,7 +289,16 @@ for i_row in range(len(rows)):
         
         
     if it_worked:
-        tq_mcmc, tau_mcmc,  = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*N.percentile(samples, [16,50,84],axis=0)))
+        tq_mcmc, tau_mcmc,  = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0], v[4]-v[1], v[1]-v[3]), zip(*N.percentile(samples, [16,50,84,2.5,97.5],axis=0)))
         print 'Best fit [t, tau] values found by starpy for input parameters are : [', tq_mcmc[0], tau_mcmc[0], ']'
         fig = corner_plot(samples, labels = [r'$ t_{quench}$', r'$ \tau$'], extents=[[N.min(samples[:,0]), N.max(samples[:,0])],[N.min(samples[:,1]),N.max(samples[:,1])]], bf=[tq_mcmc, tau_mcmc], id=dr8)
         fig.savefig(plotdir+'starpy_output_'+str(dr8)+'_'+str(ra)+'_'+str(dec)+'.pdf')
+
+        if write_params:
+            fparams.write("%s %f %f %f %f %f %f %f %f %f %f\n" % (dr8, tq_mcmc[0], tau_mcmc[0], tq_mcmc[1], tau_mcmc[1], tq_mcmc[2], tau_mcmc[2], tq_mcmc[3], tau_mcmc[3], tq_mcmc[4], tau_mcmc[4]))
+            # the headers are defined above, when the input file is read in
+            #fparams.write("# id tq_median tau_median dtq_hi_68pct dtau_hi_68pct dtq_lo_68pct dtau_lo_68pct dtq_hi_95pct dtau_hi_95pct dtq_lo_95pct dtau_lo_95pct\n")
+
+        
+if write_params:
+    fparams.close()
