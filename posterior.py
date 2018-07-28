@@ -22,6 +22,7 @@ from scipy.interpolate import LinearNDInterpolator
 from scipy.interpolate import interp2d
 from itertools import product
 import sys
+import fluxes
 
 cosmo = FlatLambdaCDM(H0 = 71.0, Om0 = 0.26)
 
@@ -223,7 +224,7 @@ else:
 '''
 
 
-def lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
+def lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one, data):
     """ Function for determining the likelihood of ONE quenching model described by theta = [tq, tau] for all the galaxies in the sample. Simple chi squared likelihood between predicted and observed colours of the galaxies. 
 
         :theta:
@@ -258,7 +259,7 @@ def lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
         """
     # why is this next line here, we don't use it at all in this function?
     tq, tau = theta
-    pred_nuvu, pred_ur = get_c_one(theta, age)
+    pred_nuvu, pred_ur = get_c_one(theta, age, data)
     return -0.5*N.log(2*N.pi*sigma_ur**2)-0.5*((ur-pred_ur)**2/sigma_ur**2)-0.5*N.log10(2*N.pi*sigma_nuvu**2)-0.5*((nuvu-pred_nuvu)**2/sigma_nuvu**2)
 
 
@@ -440,7 +441,7 @@ def expsfh_mass(ur, Mr, age, tq, tau, time):
 
 
 
-def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans], filter_pairs=None):
+def predict_c_one(theta, age, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwave, rtrans], filter_pairs=None):
     """ This function predicts the u-r and nuv-u colours of a galaxy with a SFH defined by [tq, tau], according to the BC03 model at a given "age" i.e. observation time. It calculates the colours at all times then interpolates for the observed age - it has to do this in order to work out the cumulative mass across the SFH to determine how much each population of stars contributes to the flux at each time step. 
         
         :theta:
@@ -504,7 +505,7 @@ def predict_c_one(theta, age, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=[rwa
         u_r_age = N.interp(age, t, u_r)
         return nuv_u_age, u_r_age
     else:
-        colours = get_colours(t*1E9, total_flux, data, filter_pairs)
+        colours = get_colours(t*1E9, total_flux, data, filter_pairs=filter_pairs)
         colours_age = [N.interp(age, t, thecol) for thecol in colours]
         return colours_age
 
@@ -615,7 +616,7 @@ def get_colours(time, flux, data, nuv=[nuvwave, nuvtrans], u=[uwave, utrans], r=
 
 
 
-def lookup_col_one(theta, age):
+def lookup_col_one(theta, age, data=None):
     ur_pred = u(theta[0], theta[1])
     nuv_pred = v(theta[0], theta[1])
     return nuv_pred, ur_pred
@@ -643,7 +644,7 @@ def lnprior(theta):
         return -N.inf
 
 # Overall likelihood function combining prior and model
-def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
+def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one, data):
     """Overall posterior function combiningin the prior and calculating the likelihood. Also prints out the progress through the code with the use of n. 
         
         :theta:
@@ -681,9 +682,9 @@ def lnprob(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one):
     lp = lnprior(theta)
     if not N.isfinite(lp):
         return -N.inf
-    return lp + lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one)
+    return lp + lnlike_one(theta, ur, sigma_ur, nuvu, sigma_nuvu, age, get_c_one, data)
 
-def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec, get_c_one, use_table, thegrid, lu=None, savedir="./"):
+def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu, age, id, ra, dec, get_c_one, use_table, thegrid, lu=None, savedir="./", data=None):
     """ Function to implement the emcee EnsembleSampler function for the sample of galaxies input. Burn in is run and calcualted fir the length specified before the sampler is reset and then run for the length of steps specified. 
         
         :ndim:

@@ -258,9 +258,11 @@ burnin = 400 # number of steps in the burn in phase of the monte carlo chain
 #The rest calls the emcee module which is initialised in the sample function of the posterior file.
 if use_table:
     the_c_function = lookup_col_one
+    themodeldata = None
     lookup = lu #N.append(nuv_pred.reshape(-1,1), ur_pred.reshape(-1,1), axis=1)
 else:
     the_c_function = predict_c_one
+    themodeldata = data
     lookup = None
 
 
@@ -278,7 +280,7 @@ for i_row in range(len(rows)):
     it_worked = False
     
     try:
-        samples, samples_save = sample(2, nwalkers, nsteps, burnin, start, float(u_r), float(err_u_r), float(nuv_u), float(err_nuv_u), age, dr8, ra, dec, the_c_function, use_table, (tq, tau, ages), lu=lookup, savedir=savedir)
+        samples, samples_save = sample(2, nwalkers, nsteps, burnin, start, float(u_r), float(err_u_r), float(nuv_u), float(err_nuv_u), age, dr8, ra, dec, the_c_function, use_table, (tq, tau, ages), lu=lookup, savedir=savedir, data=themodeldata)
         it_worked = True
         
     except Exception as e:

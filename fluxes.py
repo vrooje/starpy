@@ -27,6 +27,10 @@ interp_fluxes_sim = f(time_steps, model_lambda)
 
 def assign_total_flux(model_ages, model_lambda, model_fluxes, time_steps, sim_SFR):
 ## Produce the array to keep track of the ages of the fractional SFR at each time step
+# Calculate the fluxes at the ages specified by the time steps rather than in the models using numpy/scipy array manipulations rather than a for loop
+    f = interpolate.interp2d(model_ages, model_lambda, model_fluxes)
+    interp_fluxes_sim = f(time_steps, model_lambda)
+
     frac_sfr = sim_SFR/sim_SFR[0]
     fraction_array = S.linalg.toeplitz(frac_sfr, N.zeros_like(frac_sfr)).T
     # Produce the array to keep track of the ages of the mass fraction of stars formed at each time step
@@ -41,7 +45,7 @@ def assign_total_flux(model_ages, model_lambda, model_fluxes, time_steps, sim_SF
 
 
 def calculate_AB_mag(time_steps, model_lambda, sim_flux, wave, trans):
-    lambda_filter1 = [i for i in model_lambda if i > wave[0] and i < wave[len(wave)-1]]
+    lambda_filter1 = [i for i in model_lambda if (i > wave[0]) and (i < wave[len(wave)-1])]
     lambda_filter2 = N.append(wave[0], lambda_filter1)
     lambda_filter = N.append(lambda_filter2, wave[len(wave)-1])
     
