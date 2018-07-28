@@ -138,7 +138,9 @@ try:
             elif (arg[0].lower().strip() in ['params_out', 'paramfile', 'paramfile_out']):
                 outparamfile = arg[1].strip()
                 write_params = True
-                fparams = open(outparamfile, "w")
+                # the 1 below tells python to flush the buffer every line
+                # so that the file doesn't lag behind the program's progress
+                fparams = open(outparamfile, "w", 1) 
                 fparams.write("# id tq_median tau_median dtq_hi_68pct dtau_hi_68pct dtq_lo_68pct dtau_lo_68pct dtq_hi_95pct dtau_hi_95pct dtq_lo_95pct dtau_lo_95pct\n")
 
 
