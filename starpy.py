@@ -139,6 +139,8 @@ try:
                 outparamfile = arg[1].strip()
                 write_params = True
                 fparams = open(outparamfile, "w")
+                fparams.write("# id tq_median tau_median dtq_hi_68pct dtau_hi_68pct dtq_lo_68pct dtau_lo_68pct dtq_hi_95pct dtau_hi_95pct dtq_lo_95pct dtau_lo_95pct\n")
+
 
 
             else:
@@ -293,9 +295,9 @@ for i_row in range(len(rows)):
         fig.savefig(plotdir+'starpy_output_'+str(dr8)+'_'+str(ra)+'_'+str(dec)+'.pdf')
 
         if write_params:
-            fparams.write("%f %f %f %f %f %f %f %f %f %f" % (tq_mcmc[0], tau_mcmc[0], tq_mcmc[1], tau_mcmc[1], tq_mcmc[2], tau_mcmc[2], tq_mcmc[3], tau_mcmc[3], tq_mcmc[4], tau_mcmc[4]))
-
-
+            fparams.write("%s %f %f %f %f %f %f %f %f %f %f\n" % (dr8, tq_mcmc[0], tau_mcmc[0], tq_mcmc[1], tau_mcmc[1], tq_mcmc[2], tau_mcmc[2], tq_mcmc[3], tau_mcmc[3], tq_mcmc[4], tau_mcmc[4]))
+            # the headers are defined above, when the input file is read in
+            #fparams.write("# id tq_median tau_median dtq_hi_68pct dtau_hi_68pct dtq_lo_68pct dtau_lo_68pct dtq_hi_95pct dtau_hi_95pct dtq_lo_95pct dtau_lo_95pct\n")
 
         
 if write_params:

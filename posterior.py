@@ -772,6 +772,7 @@ def sample(ndim, nwalkers, nsteps, burnin, start, ur, sigma_ur, nuvu, sigma_nuvu
     samples_save = savedir+'samples_'+str(int(id))+'_'+str(ra)+'_'+str(dec)+'_'+str(time.strftime('%H_%M_%d_%m_%y'))+'.npy'
     N.save(samples_save, samples)
     print 'Main emcee run completed.'
+    P.close('all'); P.clf(); P.cla()
     return samples, samples_save
 
 
